@@ -227,6 +227,12 @@
                 >
                     Previous Round
                 </button>
+                <button 
+                    class="nav-button"
+                    on:click={() => goto('/')}
+                >
+                    Home
+                </button>
             </div>
         </div>
 
@@ -691,7 +697,7 @@
     }
 
     .truncate-text {
-        max-width: 200px;
+        max-width: 400px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -700,7 +706,7 @@
 
     @media (max-width: 600px) {
         .truncate-text {
-            max-width: 100px;
+            max-width: 200px;
         }
     }
 </style> 

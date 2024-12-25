@@ -42,7 +42,7 @@
 
         <GameStats {gameState} />
 
-        <button on:click={() => goto('/')}>New Game</button>
+        <button on:click={() => goto('/')}>Return Home</button>
     {:else}
         <p>Unable to load game results</p>
         <button on:click={() => goto('/')}>Return Home</button>

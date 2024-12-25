@@ -29,6 +29,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
         }
 
         const emptyGameState: GameState = {
+            gameCode,
+            timestamp: Date.now(),
             players,
             currentRound: {
                 number: gameConfig.roundSequence[0],
@@ -52,4 +54,4 @@ export const POST: RequestHandler = async ({ params, request }) => {
     }
 
     return json({ error: 'Invalid action' }, { status: 400 });
-}; 
+};

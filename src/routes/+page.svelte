@@ -1,263 +1,210 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { generateGameCode } from '$lib/utils';
-    import { GameType } from '$lib/types';
-    import { createGame } from '$lib/services/gameService';
+    import * as gameService from '$lib/services/gameService';
+    import type { GameSummary } from '$lib/types';
     
-    let numPlayers = 2;
-    let playerNames: string[] = Array(numPlayers).fill('');
-    let error = '';
-    
-    // New game configuration state
-    let gameType = GameType.ASCENDING;
-    let minRound = 1;
-    let maxRound = 13;
-    let customSequence = '';
-    
-    function updatePlayerCount(newCount: number) {
-        numPlayers = newCount;
-        playerNames = Array(numPlayers).fill('');
-    }
+    let games: GameSummary[] = [];
+    let isLoading = true;
 
-    function validateConfig(sequence: number[]): string | null {
-        if (maxRound * numPlayers > 52) {
-            return 'Maximum round x number of players cannot exceed 52 cards';
+    onMount(async () => {
+        try {
+            games = await gameService.listGames();
+        } finally {
+            isLoading = false;
         }
+    });
 
-        if (sequence.length === 0) {
-            return 'Please enter a valid round sequence';
-        }
-
-        return null;
-    }
-
-    function generateRoundSequence(): number[] {
-        switch (gameType) {
-            case GameType.ASCENDING:
-                return Array.from({ length: maxRound - minRound + 1 }, 
-                    (_, i) => i + minRound);
-            
-            case GameType.ASCENDING_DESCENDING: {
-                const ascending = Array.from(
-                    { length: maxRound - minRound + 1 }, 
-                    (_, i) => i + minRound
-                );
-                const descending = [...ascending].reverse().slice(1);
-                return [...ascending, ...descending];
-            }
-            
-            case GameType.CUSTOM:
-                return customSequence
-                    .split(',')
-                    .map(n => parseInt(n.trim()))
-                    .filter(n => !isNaN(n));
-            
-            default:
-                return [];
-        }
-    }
-
-    async function startGame() {
-        // Existing name validation
-        if (playerNames.some(name => !name.trim())) {
-            error = 'All players must have names';
-            return;
-        }
-        
-        if (new Set(playerNames).size !== playerNames.length) {
-            error = 'All player names must be unique';
-            return;
-        }
-
-        // New config validation
-        const sequence = generateRoundSequence();
-        const configError = validateConfig(sequence);
-        if (configError) {
-            error = configError;
-            return;
-        }
-
-        // Generate game code and navigate
-        const gameCode = generateGameCode();
-        await createGame(gameCode, playerNames.map(name => ({ name, score: 0 })), {
-            gameType: gameType,
-            minRound: minRound,
-            maxRound: maxRound,
-            roundSequence: sequence
-        });
-        goto(`/${gameCode}/game`);
+    function formatDate(timestamp: number): string {
+        return new Date(timestamp).toLocaleString();
     }
 </script>
 
 <div class="container">
-    <h1>🃏 Oh Hell</h1>
-    
-    <div class="setup-form">
-        <section class="game-config">
-            <h2>Config</h2>
-            <!-- Game Type Selection -->
-            <label>
-                Game Type:
-                <select bind:value={gameType}>
-                    <option value={GameType.ASCENDING}>Ascending</option>
-                    <option value={GameType.ASCENDING_DESCENDING}>Ascending-Descending</option>
-                    <option value={GameType.CUSTOM}>Custom Sequence</option>
-                </select>
-            </label>
-
-            {#if gameType !== GameType.CUSTOM}
-                <div class="round-config">
-                    <label>
-                        Minimum Round:
-                        <input 
-                            type="number" 
-                            bind:value={minRound} 
-                            min="1" 
-                            max={maxRound}
-                        />
-                    </label>
-                    
-                    <label>
-                        Maximum Round:
-                        <input 
-                            type="number" 
-                            bind:value={maxRound} 
-                            min={minRound} 
-                            max="20"
-                        />
-                    </label>
-                </div>
-            {:else}
-                <label>
-                    Custom Round Sequence:
-                    <input 
-                        type="text" 
-                        bind:value={customSequence}
-                        placeholder="Enter rounds separated by commas (e.g., 1,2,3,2,1)"
-                    />
-                </label>
-            {/if}
-        </section>
-
-        <section class="player-config">
-            <h2>Players</h2>
-            <label>
-                Number of Players:
-                <select 
-                    bind:value={numPlayers}
-                    on:change={() => updatePlayerCount(numPlayers)}
-                >
-                    {#each Array(6) as _, i}
-                        <option value={i + 2}>{i + 2}</option>
-                    {/each}
-                </select>
-            </label>
-            
-            <div class="player-names">
-                {#each playerNames as _, i}
-                    <label>
-                        Player {i + 1}:
-                        <input 
-                            type="text"
-                            bind:value={playerNames[i]}
-                            placeholder="Enter name"
-                        />
-                    </label>
-                {/each}
-            </div>
-        </section>
-
-        {#if error}
-            <p class="error">{error}</p>
-        {/if}
-
-        <button on:click={startGame}>Start Game</button>
+    <div class="header">
+        <h1>🎲 Oh Hell Spreadsheet</h1>
+        <button class="new-game-button" on:click={() => goto('/new')}>New Game</button>
     </div>
+
+    {#if isLoading}
+        <div class="loading">Loading past games...</div>
+    {:else if games.length === 0}
+        <div class="empty-state">
+            <p>No games found</p>
+        </div>
+    {:else}
+        <div class="games-list">
+            {#each games as game}
+                <button 
+                    class="game-card"
+                    on:click={() => goto(`/${game.gameCode}/${game.finished ? 'results' : 'game'}`)}
+                >
+                    <div class="game-info">
+                        <div class="game-header">
+                            <span class="game-code">#{game.gameCode}</span>
+                            <span class="game-status" class:finished={game.finished}>
+                                {game.finished ? 'Completed' : 'In Progress'}
+                            </span>
+                        </div>
+                        <div class="players">
+                            {#each game.players as player}
+                                <span class="player truncate-text">{player.name}</span>
+                            {/each}
+                        </div>
+                    </div>
+                    <div class="game-meta">
+                        <span class="timestamp">{formatDate(game.timestamp)}</span>
+                        <span class="rounds">{game.currentRound} / {game.totalRounds} rounds</span>
+                    </div>
+                </button>
+            {/each}
+        </div>
+    {/if}
 </div>
 
 <style>
     .container {
-        max-width: 600px;
+        max-width: 800px;
         margin: 2rem auto;
         padding: 2rem;
-        text-align: center;
         font-family: 'Figtree', sans-serif;
     }
 
-    h1 {
-        font-size: 3rem;
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 2rem;
     }
 
-    .setup-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
+    h1 {
+        margin: 0;
+        font-size: 2rem;
     }
 
-    .player-names {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    label {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: left;
-    }
-
-    input, select {
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 1rem;
-        font-family: 'Figtree', sans-serif;
-    }
-
-    button {
-        padding: 1rem 2rem;
+    .new-game-button {
+        padding: 0.75rem 1.5rem;
         background-color: #4CAF50;
         color: white;
         border: none;
         border-radius: 4px;
-        font-size: 1.1rem;
         cursor: pointer;
-        transition: background-color 0.2s;
-        font-family: 'Figtree', sans-serif;
+        font-family: inherit;
+        font-size: 1rem;
     }
 
-    button:hover {
+    .new-game-button:hover {
         background-color: #45a049;
     }
 
-    .error {
-        color: red;
-        margin: 0;
-    }
-
-    .round-config {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-    }
-
-    section h2 {
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-        color: #2c3e50;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e9ecef;
-    }
-
-    .game-config, .player-config {
+    .games-list {
         display: flex;
         flex-direction: column;
         gap: 1rem;
     }
 
-    .setup-form {
-        gap: 2rem;
+    .game-card {
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: inherit;
+    }
+
+    .game-card:hover {
+        transform: translateX(5px);
+        border-color: #4CAF50;
+    }
+
+    .game-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .game-code {
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .game-status {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .game-status.finished {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .players {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .player {
+        font-size: 0.9rem;
+        color: #495057;
+        background-color: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        max-width: 150px;
+    }
+
+    .game-meta {
+        text-align: right;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .game-meta > * {
+        display: block;
+    }
+
+    .loading, .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+    }
+
+    .truncate-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+        .container {
+            padding: 1rem;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .game-card {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .game-meta {
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+        }
     }
 </style>

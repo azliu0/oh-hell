@@ -1,4 +1,6 @@
 export interface GameState {
+    gameCode: string;
+    timestamp: number;
     players: Player[];
     currentRound: Round;
     gameHistory: Round[];
@@ -42,4 +44,13 @@ export enum GameType {
     ASCENDING = 'ascending', // lo to hi
     ASCENDING_DESCENDING = 'ascending-descending', // lo to hi to lo
     CUSTOM = 'custom', // custom sequence
+}
+
+export interface GameSummary {
+    gameCode: string;
+    players: Player[];
+    timestamp: number;
+    finished: boolean;
+    currentRound: number;
+    totalRounds: number;
 } 

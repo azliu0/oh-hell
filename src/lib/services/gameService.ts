@@ -1,4 +1,4 @@
-import type { GameState, Player, GameConfig } from '$lib/types';
+import type { GameState, Player, GameConfig, GameSummary } from '$lib/types';
 
 export async function getGameState(gameCode: string): Promise<GameState | null> {
     const response = await fetch(`/api/game/${gameCode}`);
@@ -30,7 +30,9 @@ export async function createGame(
         body: JSON.stringify({ 
             action: 'create',
             players,
-            gameConfig
+            gameConfig,
+            timestamp: Date.now(),
+            gameCode
         })
     });
 
@@ -38,4 +40,10 @@ export async function createGame(
         const data = await response.json();
         throw new Error(data.error || 'Failed to create game');
     }
+}
+
+export async function listGames(): Promise<GameSummary[]> {
+    const response = await fetch('/api/games');
+    if (!response.ok) return [];
+    return response.json();
 }
