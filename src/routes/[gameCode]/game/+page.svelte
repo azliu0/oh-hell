@@ -243,7 +243,7 @@
         </div>
 
         <div class="game-info">
-            <p class="dealer">Dealer: {gameState.players[getCurrentDealer()].name}</p>
+            <p class="dealer">Dealer: <span class="truncate-text">{gameState.players[getCurrentDealer()].name}</span></p>
             <button class="icon-button" on:click={() => showStats = !showStats}>
                 {showStats ? 'Hide Stats' : 'Show Stats'}
             </button>
@@ -256,7 +256,7 @@
                     <div class="score-item" class:leader={i === 0}>
                         <div class="rank">#{i + 1}</div>
                         <div class="player-info">
-                            <span class="name">{player.name}</span>
+                            <span class="name truncate-text">{player.name}</span>
                             <span class="score">{player.score} pts</span>
                         </div>
                     </div>
@@ -274,15 +274,19 @@
                 <div class="inputs-list">
                     {#each gameState.players as player, i}
                         <div class="input-row">
-                            <span class="player-name">{player.name}</span>
-                            <input
-                                type="number"
-                                min="0"
-                                max={getCurrentRoundNumber()}
-                                step="1"
-                                bind:value={currentBids[i]}
-                                disabled={biddingComplete}
-                            />
+                            <span class="player-name truncate-text">{player.name}</span>
+                            <div class="number-selector">
+                                {#each Array(getCurrentRoundNumber() + 1) as _, num}
+                                    <button 
+                                        class="number-button"
+                                        class:selected={currentBids[i] === num}
+                                        disabled={biddingComplete}
+                                        on:click={() => currentBids[i] = num}
+                                    >
+                                        {num}
+                                    </button>
+                                {/each}
+                            </div>
                         </div>
                     {/each}
                 </div>
@@ -307,15 +311,19 @@
                 <div class="inputs-list">
                     {#each gameState.players as player, i}
                         <div class="input-row">
-                            <span class="player-name">{player.name}</span>
-                            <input
-                                type="number"
-                                min="0"
-                                max={getCurrentRoundNumber()}
-                                step="1"
-                                bind:value={currentTricks[i]}
-                                disabled={!biddingComplete}
-                            />
+                            <span class="player-name truncate-text">{player.name}</span>
+                            <div class="number-selector">
+                                {#each Array(getCurrentRoundNumber() + 1) as _, num}
+                                    <button 
+                                        class="number-button"
+                                        class:selected={currentTricks[i] === num}
+                                        disabled={!biddingComplete}
+                                        on:click={() => currentTricks[i] = num}
+                                    >
+                                        {num}
+                                    </button>
+                                {/each}
+                            </div>
                         </div>
                     {/each}
                 </div>
@@ -346,6 +354,9 @@
         font-size: 1.2rem;
         font-weight: bold;
         color: #666;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .scoreboard {
@@ -393,23 +404,17 @@
         justify-content: space-between;
         align-items: center;
         padding: 0 1rem;
+        min-width: 0;
     }
 
     .name {
         font-weight: 500;
+        margin-right: 1rem;
     }
 
     .score {
         font-weight: bold;
         color: #4CAF50;
-    }
-
-    input {
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 80px;
-        font-family: inherit;
     }
 
     button {
@@ -421,6 +426,7 @@
         cursor: pointer;
         margin-top: 1rem;
         font-family: inherit;
+        font-size: 1rem;
     }
 
     button:hover {
@@ -470,6 +476,23 @@
         border-radius: 8px;
     }
 
+    @media (max-width: 600px) {
+        .round-inputs {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .container {
+            padding: 1rem;
+            margin: 1rem auto;
+        }
+
+        .input-row {
+            gap: 0.5rem;
+        }
+    }
+
     .input-column {
         display: flex;
         flex-direction: column;
@@ -484,19 +507,16 @@
 
     .input-row {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
     }
 
     .player-name {
         font-weight: 500;
         color: #495057;
-    }
-
-    input:disabled {
-        background-color: #e9ecef;
-        cursor: not-allowed;
+        font-size: 1.1rem;
+        min-width: 0;
     }
 
     button:disabled {
@@ -600,5 +620,87 @@
         color: #0d6efd;
         border: 2px solid #0d6efd;
         box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+    }
+
+    .number-selector {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .number-button {
+        width: 2.5rem;
+        height: 2.5rem;
+        padding: 0;
+        margin: 0;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .number-button.selected {
+        background-color: #4CAF50;
+        color: white;
+        border-color: #4CAF50;
+    }
+
+    .number-button:disabled {
+        background-color: #fff;
+        border-color: #e9ecef;
+        color: #adb5bd;
+        opacity: 1;
+        cursor: not-allowed;
+    }
+
+    .number-button.selected:disabled {
+        background-color: #4CAF50;
+        color: white;
+        opacity: 0.5;
+        border-color: #4CAF50;
+    }
+
+    .number-button:hover:not(:disabled) {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+
+    @media (max-width: 600px) {
+        .number-button {
+            width: 3rem;
+            height: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .input-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+
+        .number-selector {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+
+    .truncate-text {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
+    @media (max-width: 600px) {
+        .truncate-text {
+            max-width: 100px;
+        }
     }
 </style> 

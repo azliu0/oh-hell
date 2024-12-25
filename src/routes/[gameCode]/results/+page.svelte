@@ -34,7 +34,7 @@
             {#each sortedPlayers as player, i}
                 <div class="player-result" class:winner={i === 0}>
                     <span class="rank">#{i + 1}</span>
-                    <span class="name">{player.name}</span>
+                    <span class="name truncate-text">{player.name}</span>
                     <span class="score">{player.score} points</span>
                 </div>
             {/each}
@@ -64,7 +64,7 @@
 
     .player-result {
         display: grid;
-        grid-template-columns: 50px 1fr 100px;
+        grid-template-columns: 50px minmax(0, 1fr) 100px;
         gap: 1rem;
         padding: 1rem;
         margin: 0.5rem 0;
@@ -89,5 +89,23 @@
 
     button:hover {
         background-color: #45a049;
+    }
+
+    .truncate-text {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
+    .name {
+        text-align: left;
+    }
+
+    @media (max-width: 600px) {
+        .truncate-text {
+            max-width: 120px;
+        }
     }
 </style>
