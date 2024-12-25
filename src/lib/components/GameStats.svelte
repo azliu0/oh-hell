@@ -30,7 +30,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th class="sticky-col">Round</th>
+                            <th class="sticky-col"></th>
                             {#each gameState.players as player}
                                 <th colspan="2" class="truncate-text">{player.name}</th>
                             {/each}
@@ -183,5 +183,11 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    th.sticky-col, td.sticky-col {
+        padding: 0.75rem 0.5rem;
+        width: 40px;
+        min-width: 40px;
     }
 </style> 
