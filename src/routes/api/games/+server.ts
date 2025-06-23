@@ -7,8 +7,8 @@ import type { GameState, GameSummary } from '$lib/types';
 const GAME_PREFIX = 'game:';
 
 const kv = createClient({
-    url: env.KV_REST_API_URL,
-    token: env.KV_REST_API_TOKEN
+    url: env.KV_KV_REST_API_URL,
+    token: env.KV_KV_REST_API_TOKEN
 });
 
 export const GET: RequestHandler = async () => {

@@ -5,8 +5,8 @@ import type { RequestHandler } from './$types';
 import type { GameState } from '$lib/types';
 
 const kv = createClient({
-    url: env.KV_REST_API_URL,
-    token: env.KV_REST_API_TOKEN
+    url: env.KV_KV_REST_API_URL,
+    token: env.KV_KV_REST_API_TOKEN
 });
 
 const GAME_PREFIX = 'game:';
@@ -20,10 +20,10 @@ export const GET: RequestHandler = async ({ params }) => {
 export const POST: RequestHandler = async ({ params, request }) => {
     const { gameCode } = params;
     const data = await request.json();
-    
+
     if (data.action === 'create') {
         const { players, gameConfig } = data;
-        
+
         if (gameConfig.roundSequence.length === 0) {
             return json({ error: 'empty round sequence' }, { status: 400 });
         }
@@ -47,7 +47,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
         await kv.set(`${GAME_PREFIX}${gameCode}`, emptyGameState);
         return json({ success: true });
     }
-    
+
     if (data.action === 'update') {
         await kv.set(`${GAME_PREFIX}${gameCode}`, data.gameState);
         return json({ success: true });
